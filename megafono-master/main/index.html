@@ -1,0 +1,156 @@
+﻿<html>
+<head>
+<title>Megáfono IP</title>
+<script>
+function get_conf(){
+var xmlhttp, myObj;
+xmlhttp = new XMLHttpRequest();
+xmlhttp.onreadystatechange = function(){
+	if (this.readyState == 4 && this.status == 200){
+		myObj = JSON.parse(this.responseText);
+		document.getElementById("dhcp").checked  = myObj.dhcp;
+		document.getElementById("ip").value = myObj.ip;
+		document.getElementById("gw").value = myObj.gw;
+		document.getElementById("mask").value = myObj.mask;
+
+		document.getElementById("sip1").value = myObj.sip1;
+		document.getElementById("sip2").value = myObj.sip2;
+
+		document.getElementById("spk").value = myObj.spk;
+	}
+};
+xmlhttp.open("GET", "conf", true);
+xmlhttp.send();
+xmlhttp = new XMLHttpRequest();
+xmlhttp.onreadystatechange = function(){
+	if (this.readyState == 4 && this.status == 200){
+		myObj = JSON.parse(this.responseText);
+		document.getElementById("chip").innerHTML  = "Chip ID " + myObj.chip_id;
+		document.getElementById("info").innerHTML  = "Versión actual " + myObj.version;
+	}
+};
+xmlhttp.open("GET", "info", true);
+xmlhttp.send();
+}
+function save_json(){
+let xhttp = new XMLHttpRequest();
+xhttp.open("POST", "save", true);
+xhttp.setRequestHeader("Content-Type", "application/json");
+xhttp.onreadystatechange = function(){
+	if (xhttp.readyState == 4){
+		if (this.status == 200){
+			alert("Configuración guardada correctamente");
+			console.log(this.responseText);
+		} else if (xhttp.status == 0){
+			alert("ERROR: Dispositivo desconectado");
+			console.log("Server closed the connection abruptly!");
+		} else {
+			alert("ERROR: No se pudo guardar la configuración");
+			console.log(xhttp.status + " Error!\n" + xhttp.responseText);
+		}
+	}
+};
+var data = JSON.stringify({ "dhcp":document.getElementById("dhcp").checked,
+							"ip":document.getElementById("ip").value,
+							"gw":document.getElementById("gw").value,
+							"mask":document.getElementById("mask").value,
+							"sip1":document.getElementById("sip1").value,
+							"sip2":document.getElementById("sip2").value,
+							"spk":document.getElementById("spk").value });
+xhttp.send(data);
+}
+function update_firmware(){
+var fileSelect = document.getElementById("ota_file");
+if (fileSelect.files && fileSelect.files.length == 1){
+	document.getElementById("progress").hidden = false;
+	document.getElementById("progress_label").innerHTML = "Subiendo...";
+	var file = fileSelect.files[0];
+	var xhr = new XMLHttpRequest();
+	xhr.onreadystatechange = function (){
+		if (xhr.readyState == 4) {
+			document.getElementById("progress").hidden = true;
+			document.getElementById("progress_label").innerHTML = "";
+			if (this.status == 200){
+				alert("Actualización instalada correctamente");
+				console.log(this.responseText);
+			} else if (xhr.status == 0){
+				alert("ERROR: Dispositivo desconectado");
+				console.log("Server closed the connection abruptly!");
+			} else {
+				alert("ERROR: No se pudo actualizar el firmware");
+				console.log(xhr.status + " Error! " + xhr.responseText);
+			}
+		}
+	};
+	xhr.upload.addEventListener("progress", function(evt){
+		if (evt.lengthComputable) {
+			var percentComplete = (evt.loaded / evt.total) * 100;
+			var x = Math.floor(percentComplete);
+			document.getElementById("progress").value = x;
+			if (x == 100) {
+				document.getElementById("progress_label").innerHTML = "Instalando...";
+			}
+	   } else {
+			console.log("total size is unknown");
+	   }
+	}, false);
+	xhr.open('POST', "update", true);
+	xhr.send(file);
+} else {
+	alert("ERROR: Seleccione un archivo");
+	console.log('Select A File First');
+}
+}
+function reboot(){
+var xmlhttp, myObj;
+xmlhttp = new XMLHttpRequest();
+xmlhttp.onreadystatechange = function(){
+	if (xmlhttp.readyState == 4){
+		if (this.status == 200){
+			alert("Dispositivo reiniciado");
+		} else {
+			alert("ERROR: No se pudo reiniciar el dispositivo");
+		}
+	}
+};
+xmlhttp.open("POST", "reboot", true);
+xmlhttp.send();
+}
+</script>
+</head>
+<body onload="get_conf()">
+<h2>Configuración</h2>
+<p id="chip"></p>
+<h3>Red</h3>
+<form action="save" method="post">
+<input type="checkbox" id="dhcp" name="dhcp">
+<label for="dhcp">Usar DHCP</label><br><br>
+<input type="text" id="ip" name="ip">
+<label for="ip">Dirección IP</label><br><br>
+<input type="text" id="gw" name="gw">
+<label for="gw">Gateway</label><br><br>
+<input type="text" id="mask" name="mask">
+<label for="mask">Máscara de red</label>
+<h3>Telefonía</h3>
+<input type="text" id="sip1" name="sip1" size="40">
+<label for="sip1">SIP 1 URI</label><br>
+<input type="text" id="sip2" name="sip2" size="40">
+<label for="sip2">SIP 2 URI</label><br>
+<p>(transpore://usuario:contraseña@central:puerto)</p>
+<input type="range" id="spk" name="spk" min="-10" max="10">
+<label for="spk">Volumen parlantes</label><br><br>
+<input type="button" onclick="save_json()" value="Guardar">
+<input type="button" onclick="reboot()" value="Reiniciar">
+</form>
+<h3>Firmware</h3>
+<p id="info"></p>
+<form action="update" method="post">
+<label for="ota_file">Instalar nuevo firmware</label>
+<input type="file" accept=".bin" id="ota_file" name="ota_file"><br><br>
+<input type="button" onclick="update_firmware()" value="Actualizar">
+<input type="button" onclick="reboot()" value="Reiniciar">
+<progress id="progress" value="0" max="100" hidden="true"></progress>
+<label id="progress_label" for="progress"></label>
+</form>
+</body>
+</html>

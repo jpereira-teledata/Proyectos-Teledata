@@ -1,0 +1,16 @@
+<resources>
+    <string name="app_name">Mobile BLE Scanner</string>
+    <string name="car_on">El vehículo requiere de su atención</string>
+    <string name="car_off">Todo en orden</string>
+    <string name="mqtt">MQTT</string>
+    <string name="ble">BLE</string>
+    <string name="gps">GPS</string>
+    <string name="zero">0</string>
+    <string name="people">Personas</string>
+    <string name="tools">Herramientas</string>
+    <string name="devices">Equipos</string>
+    <string name="other">Otros</string>
+    <string name="not_found_msg">No se encontró el archivo de configuración</string>
+    <string name="read_error_msg">Error leyendo el archivo de configuración</string>
+    <string name="bad_config_msg">Faltan campos en el archivo de configuración</string>
+</resources>

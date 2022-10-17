@@ -1,0 +1,70 @@
+menu "WiFi AP Configuration"
+
+config AP_SSID
+    string "AP SSID"
+    default "Mega_AP"
+
+config AP_PASS
+    string "AP Password"
+    default "!t3l3d4t4577*"
+
+endmenu
+
+menu "WiFi Configuration"
+
+config STA_SSID
+    string "STA SSID"
+    default "The Hamptons 2.4GHz"
+
+config STA_PASS
+    string "STA Password"
+    default "calvinharris"
+
+endmenu
+
+menu "IP Configuration"
+
+config DHCP
+    bool "DHCP"
+
+config IP
+    string "IP"
+    default "172.30.199.90"
+
+config MASK
+    string "Mask"
+    default "255.255.255.0"
+
+config GW
+    string "Gateway"
+    default "172.30.199.1"
+
+endmenu
+
+menu "VoIP Configuration"
+
+choice VOIP_CODEC
+    prompt "SIP Codec"
+    default G711A
+    help
+        sip codec
+
+config SIP_CODEC_G711A
+    bool "G711 PCMA"
+config SIP_CODEC_G711U
+    bool "G711 PCMU"
+endchoice
+
+config SIP_1_URI
+    string "SIP 1 URI"
+    default "udp://353:pbx353@192.168.2.20:5060"
+    help
+    The SIP URI with username, password, address, port and transport type
+
+config SIP_2_URI
+    string "SIP 2 URI"
+    default "udp://354:pbx354@192.168.2.20:5060"
+    help
+    The SIP URI with username, password, address, port and transport type
+
+endmenu

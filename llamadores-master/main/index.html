@@ -1,0 +1,269 @@
+﻿<html>
+<head>
+<title>Llamador de enfermería</title>
+<script>
+function get_conf(){
+	var xmlhttp, myObj;
+	xmlhttp = new XMLHttpRequest();
+	xmlhttp.onreadystatechange = function(){
+		if (this.readyState == 4 && this.status == 200){
+			myObj = JSON.parse(this.responseText);
+			document.getElementById("dhcp").checked = myObj.dhcp;
+			document.getElementById("ip").value = myObj.ip;
+			document.getElementById("gw").value = myObj.gw;
+			document.getElementById("mask").value = myObj.mask;
+			document.getElementById("server").value = myObj.server;
+			document.getElementById("url").value = myObj.url;
+			document.getElementById("user").value = myObj.user;
+			document.getElementById("pass").value = myObj.pass;
+			if (myObj.sip_enable == undefined){
+				document.getElementById("sip_enable").checked = true;
+			} else {
+				document.getElementById("sip_enable").checked = myObj.sip_enable;
+			}
+			document.getElementById("sip").value = myObj.sip;
+			document.getElementById("call").value = myObj.call;
+			document.getElementById("tone").value = myObj.tone;
+			document.getElementById("spk").value = myObj.spk;
+			document.getElementById("mic").value = myObj.mic;
+			if (myObj.invert_panic_button == undefined){
+				document.getElementById("invert_panic_button").checked = false;
+			} else {
+				document.getElementById("invert_panic_button").checked = myObj.invert_panic_button;
+			}
+		}
+	};
+	xmlhttp.open("GET", "conf", true);
+	xmlhttp.send();
+	xmlhttp = new XMLHttpRequest();
+	xmlhttp.onreadystatechange = function(){
+		if (this.readyState == 4 && this.status == 200){
+			myObj = JSON.parse(this.responseText);
+			document.getElementById("chip").innerHTML  = "Chip ID " + myObj.chip_id;
+			if (myObj.temp == -127){
+				document.getElementById("temp").innerHTML  = "Sensor de temperatura no disponible";
+			} else {
+				document.getElementById("temp").innerHTML  = "Temperatura " + myObj.temp + " ºC";
+			}
+			document.getElementById("info").innerHTML  = "Versión actual " + myObj.version;
+		}
+	};
+	xmlhttp.open("GET", "info", true);
+	xmlhttp.send();
+}
+function level_test(){
+	let xhttp = new XMLHttpRequest();
+	xhttp.open("POST", "level_test", true);
+	xhttp.setRequestHeader("Content-Type", "application/json");
+	xhttp.onreadystatechange = function(){
+		if (xhttp.readyState == 4){
+			if (this.status == 200){
+				console.log(this.responseText);
+			} else if (xhttp.status == 0){
+				alert("ERROR: Dispositivo desconectado");
+				console.log("Server closed the connection abruptly!");
+			} else {
+				alert("ERROR: No se pudieron enviar los valores");
+				console.log(xhttp.status + " Error!\n" + xhttp.responseText);
+			}
+		}
+	};
+	var data = JSON.stringify({
+		"tone":document.getElementById("tone").value,
+		"spk":document.getElementById("spk").value,
+		"mic":document.getElementById("mic").value,
+	});
+	xhttp.send(data);
+}
+function save_json(){
+	let xhttp = new XMLHttpRequest();
+	xhttp.open("POST", "save", true);
+	xhttp.setRequestHeader("Content-Type", "application/json");
+	xhttp.onreadystatechange = function(){
+		if (xhttp.readyState == 4){
+			if (this.status == 200){
+				alert("Configuración guardada correctamente");
+				console.log(this.responseText);
+			} else if (xhttp.status == 0){
+				alert("ERROR: Dispositivo desconectado");
+				console.log("Server closed the connection abruptly!");
+			} else {
+				alert("ERROR: No se pudo guardar la configuración");
+				console.log(xhttp.status + " Error!\n" + xhttp.responseText);
+			}
+		}
+	};
+	var data = JSON.stringify({
+		"dhcp":document.getElementById("dhcp").checked,
+		"ip":document.getElementById("ip").value,
+		"gw":document.getElementById("gw").value,
+		"mask":document.getElementById("mask").value,
+		"server":document.getElementById("server").value,
+		"url":document.getElementById("url").value,
+		"user":document.getElementById("user").value,
+		"pass":document.getElementById("pass").value,
+		"sip_enable":document.getElementById("sip_enable").checked,
+		"sip":document.getElementById("sip").value,
+		"call":document.getElementById("call").value,
+		"tone":document.getElementById("tone").value,
+		"spk":document.getElementById("spk").value,
+		"mic":document.getElementById("mic").value,
+		"invert_panic_button":document.getElementById("invert_panic_button").checked
+	});
+	xhttp.send(data);
+}
+function upload_config(){
+	var fileSelect = document.getElementById("config_file");
+	if (fileSelect.files && fileSelect.files.length == 1){
+		var file = fileSelect.files[0];
+		var xhr = new XMLHttpRequest();
+		xhr.onreadystatechange = function (){
+			if (xhr.readyState == 4) {
+				if (this.status == 200){
+					alert("Configuración subida correctamente");
+					console.log(this.responseText);
+					get_conf();
+				} else if (xhr.status == 0){
+					alert("ERROR: Dispositivo desconectado");
+					console.log("Server closed the connection abruptly!");
+				} else {
+					alert("ERROR: No se pudo subir la configuración");
+					console.log(xhr.status + " Error! " + xhr.responseText);
+				}
+			}
+		};
+		xhr.open('POST', "save", true);
+		xhr.send(file);
+	} else {
+		alert("ERROR: Seleccione un archivo");
+		console.log('Select A File First');
+	}
+}
+function update_firmware(){
+	var fileSelect = document.getElementById("ota_file");
+	if (fileSelect.files && fileSelect.files.length == 1){
+		document.getElementById("progress").hidden = false;
+		document.getElementById("progress_label").innerHTML = "Subiendo...";
+		var file = fileSelect.files[0];
+		var xhr = new XMLHttpRequest();
+		xhr.onreadystatechange = function (){
+			if (xhr.readyState == 4) {
+				document.getElementById("progress").hidden = true;
+				document.getElementById("progress_label").innerHTML = "";
+				if (this.status == 200){
+					alert("Actualización instalada correctamente");
+					console.log(this.responseText);
+				} else if (xhr.status == 0){
+					alert("ERROR: Dispositivo desconectado");
+					console.log("Server closed the connection abruptly!");
+				} else {
+					alert("ERROR: No se pudo actualizar el firmware");
+					console.log(xhr.status + " Error! " + xhr.responseText);
+				}
+			}
+		};
+		xhr.upload.addEventListener("progress", function(evt){
+			if (evt.lengthComputable) {
+				var percentComplete = (evt.loaded / evt.total) * 100;
+				var x = Math.floor(percentComplete);
+				document.getElementById("progress").value = x;
+				if (x == 100) {
+					document.getElementById("progress_label").innerHTML = "Instalando...";
+				}
+			} else {
+				console.log("total size is unknown");
+			}
+		}, false);
+		xhr.open('POST', "update", true);
+		xhr.send(file);
+	} else {
+		alert("ERROR: Seleccione un archivo");
+		console.log('Select A File First');
+	}
+}
+function reboot(){
+	var xmlhttp, myObj;
+	xmlhttp = new XMLHttpRequest();
+	xmlhttp.onreadystatechange = function(){
+		if (xmlhttp.readyState == 4){
+			if (this.status == 200){
+				alert("Dispositivo reiniciado");
+			} else {
+				alert("ERROR: No se pudo reiniciar el dispositivo");
+			}
+		}
+	};
+	xmlhttp.open("POST", "reboot", true);
+	xmlhttp.send();
+}
+</script>
+</head>
+<body onload="get_conf()">
+<hr/>
+<h2>Configuración</h2>
+<hr/>
+<form action="upload_config" method="post">
+<label for="config_file">Archivo de configuración</label>
+<input type="file" accept=".json" id="config_file" name="config_file"><br><br>
+<a href="conf" download="conf.json"><button type="button">Descargar</button></a>
+<input type="button" onclick="upload_config()" value="Subir y guardar">
+<input type="button" onclick="reboot()" value="Reiniciar">
+</form>
+<hr/>
+<p id="chip"></p>
+<p id="temp"></p>
+<h3>Red</h3>
+<form action="save" method="post">
+<input type="checkbox" id="dhcp" name="dhcp">
+<label for="dhcp">Usar DHCP</label><br><br>
+<input type="text" id="ip" name="ip">
+<label for="ip">Dirección IP</label><br><br>
+<input type="text" id="gw" name="gw">
+<label for="gw">Gateway</label><br><br>
+<input type="text" id="mask" name="mask">
+<label for="mask">Máscara de red</label>
+<h3>SmartContent</h3>
+<input type="text" id="server" name="server">
+<label for="server">Servidor</label><br><br>
+<input type="text" id="url" name="url">
+<label for="url">URL</label><br><br>
+<input type="text" id="user" name="user">
+<label for="user">Usuario</label><br><br>
+<input type="password" id="pass" name="pass">
+<label for="pass">Contraseña</label>
+<h3>Telefonía</h3>
+<input type="checkbox" id="sip_enable" name="sip_enable">
+<label for="sip_enable">Usar SIP</label><br><br>
+<input type="text" id="call" name="call">
+<label for="call">Interno de emergencia</label><br><br>
+<input type="text" id="sip" name="sip" size="40">
+<label for="sip">SIP URI</label><br>
+<p>(transpore://usuario:contraseña@central:puerto)</p><br>
+<p>Niveles de volumen</p>
+<input type="range" id="tone" name="tone" min="-20" max="20">
+<label for="tone">Tono</label><br><br>
+<input type="range" id="spk" name="spk" min="-20" max="20">
+<label for="spk">Parlante</label><br><br>
+<input type="range" id="mic" name="mic" min="-10" max="0">
+<label for="mic">Micrófono</label><br><br>
+<input type="button" onclick="level_test()" value="Probar">
+<h3>Entradas</h3>
+<input type="checkbox" id="invert_panic_button" name="invert_panic_button">
+<label for="invert_panic_button">Botón de pánico NC</label><br><br>
+<input type="button" onclick="save_json()" value="Guardar">
+<input type="button" onclick="reboot()" value="Reiniciar">
+</form>
+<hr/>
+<h3>Firmware</h3>
+<hr/>
+<p id="info"></p>
+<form action="update" method="post">
+<label for="ota_file">Instalar nuevo firmware</label>
+<input type="file" accept=".bin" id="ota_file" name="ota_file"><br><br>
+<input type="button" onclick="update_firmware()" value="Actualizar">
+<input type="button" onclick="reboot()" value="Reiniciar">
+<progress id="progress" value="0" max="100" hidden="true"></progress>
+<label id="progress_label" for="progress"></label>
+</form>
+</body>
+</html>
